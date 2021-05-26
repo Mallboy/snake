@@ -79,7 +79,7 @@ typedef struct {
   char tail_attr;
   int collided:1;
   int human:1;
-  BodyPart body[15];
+  BodyPart body[45];
   int length;
 } Player;
 
@@ -97,7 +97,7 @@ byte gameover;
 byte frames_per_move;
 unsigned char seed;
 
-#define START_SPEED 1
+#define START_SPEED 5
 #define MAX_SPEED 1
 #define MAX_SCORE 7
 
@@ -122,12 +122,13 @@ void draw_box(byte x, byte y, byte x2, byte y2, const char* chars) {
 }
 
 void draw_playfield() {
-  draw_box(1,2,COLS-2,ROWS-1,BOX_CHARS);
-  cputcxy(9,1,players[0].score+'0');
-  cputcxy(28,1,players[1].score+'0');
+  draw_box(1,3,COLS-2,ROWS-1,BOX_CHARS);
   if (attract) {
-    cputsxy(3,ROWS-1,"ATTRACT MODE - PRESS ENTER");
+    //cputsxy(3,ROWS-1,"BATTLE SNAKE - PRESS ENTER");
+    cputsxy(3,2,"BATTLE SNAKE - PRESS ENTER");
   } else {
+    cputcxy(9,2,players[0].score+'0');
+    cputcxy(28,2,players[1].score+'0');
     cputsxy(1,1,"PLYR1:");
     cputsxy(20,1,"PLYR2:");
   }
@@ -175,7 +176,7 @@ void reset_players() {
   
   players[0].length = players[1].length = 1;
   
-  for(i = 0; i < 15 && (players[0].body[i].active || players[1].body[i].active); i++)
+  for(i = 0; i < 45 && (players[0].body[i].active || players[1].body[i].active); i++)
   {
     players[0].body[i].active = false;
     players[1].body[i].active = false;
@@ -217,6 +218,7 @@ void update_body(Player* p) {
 
 void move_player(Player* p) {
   //cputcxy(p->x, p->y, p->tail_attr);
+  draw_player(p);
   update_body(p);
   p->x += DIR_X[p->dir];
   p->y += DIR_Y[p->dir];
@@ -228,7 +230,7 @@ void move_player(Player* p) {
       draw_powop(&pow);
       p->body[p->length-1].active = true;
       p->length++;
-      if (frames_per_move > MAX_SPEED) frames_per_move--;
+      if (frames_per_move > MAX_SPEED && p->human) frames_per_move--;
     }
     else
       p->collided = 1;
@@ -279,7 +281,7 @@ void ai_control(Player* p) {
   
   if(p->x > pow.x)
   {
-    if(p->y != pow.y)// && ((rand8() % (1 - 0 + 1)) + 0) > 0)
+    if(p->y != pow.y && ((rand8() % (1 - 0 + 1)) + 0) > 0)
       if(p->y < pow.y)
         dir = D_DOWN;
       else
@@ -289,7 +291,7 @@ void ai_control(Player* p) {
   }
   else if(p->x < pow.x)
   {
-    if(p->y != pow.y)// && ((rand8() % (10 - 0 + 1)) + 0) > 6)
+    if(p->y != pow.y && ((rand8() % (10 - 0 + 1)) + 0) > 6)
       if(p->y < pow.y)
         dir = D_DOWN;
       else
@@ -310,9 +312,10 @@ void ai_control(Player* p) {
     ai_try_dir(p, dir+1, 0);
     ai_try_dir(p, dir-1, 0);
   } else {
-    ai_try_dir(p, dir-1, 0) && ai_try_dir(p, dir-1, 1+(rand() & 3));
-    ai_try_dir(p, dir+1, 0) && ai_try_dir(p, dir+1, 1+(rand() & 3));
-    ai_try_dir(p, dir, rand() & 3);
+    //ai_try_dir(p, dir-1, 0) && ai_try_dir(p, dir-1, 1+(rand() & 3));
+    //ai_try_dir(p, dir+1, 0) && ai_try_dir(p, dir+1, 1+(rand() & 3));
+    //ai_try_dir(p, dir, rand() & 3);
+    seed++;
   }
 }
 
@@ -358,6 +361,7 @@ void declare_winner(byte winner) {
   vrambuf_flush();
   delay(75);
   gameover = 1;
+  attract = 1;
 }
 
 #define AE(tl,tr,bl,br) (((tl)<<0)|((tr)<<2)|((bl)<<4)|((br)<<6))
@@ -372,7 +376,7 @@ AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
-AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1), AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),
+AE(1,0,1,1),AE(0,0,1,1),AE(0,0,1,1),AE(0,0,1,1), AE(0,0,1,1),AE(0,0,1,1),AE(0,0,1,1),AE(0,1,1,1),
 AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1), AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),
 };
 
@@ -436,7 +440,6 @@ void play_game() {
     players[0].human = 1;
   while (!gameover) {
     play_round();
-    
   }
 }
 
