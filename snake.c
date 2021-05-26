@@ -234,7 +234,7 @@ void move_player(Player* p) {
       draw_powop(&pow);
       p->body[p->length-1].active = true;
       p->length++;
-      if (frames_per_move > MAX_SPEED && p->human) frames_per_move--;
+      if ((frames_per_move > MAX_SPEED && p->human) || (frames_per_move > MAX_SPEED && attract)) frames_per_move--;
     }
     else
       p->collided = 1;
