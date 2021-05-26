@@ -79,7 +79,7 @@ typedef struct {
   char tail_attr;
   int collided:1;
   int human:1;
-  BodyPart body[100];
+  BodyPart body[15];
   int length;
 } Player;
 
@@ -103,7 +103,7 @@ unsigned char seed;
 
 ///////////
 
-const char BOX_CHARS[8] = { 0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03 };
+const char BOX_CHARS[8] = { 0xa5,0xa3,0xa0,0xa2,0xa4,0xa1,0xa6,0xa7 };
 
 void draw_box(byte x, byte y, byte x2, byte y2, const char* chars) {
   byte x1 = x;
@@ -139,6 +139,7 @@ const char DIR_Y[4] = { 0, 1, 0, -1 };
 
 void rand_place() {
   set_rand(seed);
+  seed += rand8();
   pow.x = (rand8() % (29 - 2 + 1)) + 2;
   pow.y = (rand8() % (23 - 3 + 1)) + 3;
   while(getchar(pow.x, pow.y) != 0)
@@ -150,14 +151,14 @@ void rand_place() {
 
 void init_game() {
   memset(players, 0, sizeof(players));
-  players[0].head_attr = 0xaf;
+  players[0].head_attr = 0xae;
   players[1].head_attr = 0xaf;
   players[0].tail_attr = 0x06;
   players[1].tail_attr = 0x07;
   players[0].length = 1;
   players[1].length = 1;
   
-  pow.attr = 0x19;
+  pow.attr = 0xad;
   
   //players[0].body[0].active = true;
   frames_per_move = START_SPEED;
@@ -174,7 +175,7 @@ void reset_players() {
   
   players[0].length = players[1].length = 1;
   
-  for(i = 0; i < 100 && (players[0].body[i].active || players[1].body[i].active); i++)
+  for(i = 0; i < 15 && (players[0].body[i].active || players[1].body[i].active); i++)
   {
     players[0].body[i].active = false;
     players[1].body[i].active = false;
@@ -188,7 +189,8 @@ void draw_player(Player* p) {
 }
 
 void draw_powop(Powop* p) {
-  cputcxy(p->x, p->y, p->attr);
+  //cputcxy(p->x, p->y, p->attr);
+  vrambuf_put(NTADR_A(p->x,p->y), &p->attr, 1);
 }
 
 void update_body(Player* p) {
@@ -214,7 +216,7 @@ void update_body(Player* p) {
 }
 
 void move_player(Player* p) {
-  cputcxy(p->x, p->y, p->tail_attr);
+  //cputcxy(p->x, p->y, p->tail_attr);
   update_body(p);
   p->x += DIR_X[p->dir];
   p->y += DIR_Y[p->dir];
@@ -251,6 +253,7 @@ void human_control(Player* p) {
   if (dir < 0x80 && dir != (p->dir ^ 2)) {
     p->dir = dir;
   }
+  //seed++;
 }
 
 byte ai_try_dir(Player* p, dir_t dir, byte shift) {
@@ -273,9 +276,10 @@ byte ai_try_dir(Player* p, dir_t dir, byte shift) {
 void ai_control(Player* p) {
   dir_t dir;
   if (p->human) return;
+  
   if(p->x > pow.x)
   {
-    if(p->y != pow.y && ((rand8() % (1 - 0 + 1)) + 0) > 0)
+    if(p->y != pow.y)// && ((rand8() % (1 - 0 + 1)) + 0) > 0)
       if(p->y < pow.y)
         dir = D_DOWN;
       else
@@ -285,7 +289,7 @@ void ai_control(Player* p) {
   }
   else if(p->x < pow.x)
   {
-    if(p->y != pow.y && ((rand8() % (10 - 0 + 1)) + 0) > 6)
+    if(p->y != pow.y)// && ((rand8() % (10 - 0 + 1)) + 0) > 6)
       if(p->y < pow.y)
         dir = D_DOWN;
       else
@@ -300,6 +304,8 @@ void ai_control(Player* p) {
     else
       dir = D_UP;
   }
+  
+  //dir = p->dir;
   if (!ai_try_dir(p, dir, 0)) {
     ai_try_dir(p, dir+1, 0);
     ai_try_dir(p, dir-1, 0);
@@ -360,20 +366,20 @@ void declare_winner(byte winner) {
 // each 2 bits defines a color palette
 // for a 16x16 box
 const unsigned char Attrib_Table[0x40]={
-AE(3,3,1,0),AE(3,3,0,0),AE(3,3,0,0),AE(3,3,0,0), AE(2,2,0,0),AE(2,2,0,0),AE(2,2,0,0),AE(2,2,0,1),
-AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
+AE(3,3,1,1),AE(3,3,1,1),AE(3,3,1,1),AE(3,3,1,1), AE(2,2,1,1),AE(2,2,1,1),AE(2,2,1,1),AE(2,2,1,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,0,1,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0), AE(0,0,0,0),AE(0,0,0,0),AE(0,0,0,0),AE(0,1,0,1),
 AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1), AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),
+AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1), AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),AE(1,1,1,1),
 };
 
 /*{pal:"nes",layout:"nes"}*/
 const unsigned char Palette_Table[16]={ 
   0x00,
-  0x01,0x28,0x31,0x00,
+  0x26,0x28,0x31,0x00,
   0x04,0x24,0x34,0x00,
   0x09,0x29,0x39,0x00,
   0x06,0x26,0x36
