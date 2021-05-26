@@ -99,8 +99,8 @@ byte gameover;
 byte frames_per_move;
 unsigned char seed;
 
-#define START_SPEED 5
-#define MAX_SPEED 1
+#define START_SPEED 4
+#define MAX_SPEED 2
 #define MAX_SCORE 7
 
 ///////////
@@ -127,7 +127,7 @@ void draw_playfield() {
   draw_box(1,3,COLS-2,ROWS-1,BOX_CHARS);
   if (attract) {
     //cputsxy(3,ROWS-1,"BATTLE SNAKE - PRESS ENTER");
-    cputsxy(2,2,"BATTLE SNAKE /// Slither.NES");
+    cputsxy(8,2,"___Slither.NES___");
     cputsxy(3,ROWS-1,"Press: A for 1P | B for 2P");
   } else {
     cputcxy(9,2,players[0].score+'0');
@@ -159,8 +159,8 @@ void init_game() {
   players[1].head_attr = 0xaf;
   players[0].tail_attr = 0x06;
   players[1].tail_attr = 0x07;
-  players[0].length = 1;
-  players[1].length = 1;
+  players[0].length = 2;
+  players[1].length = 2;
   
   pow.attr = 0xad;
   
@@ -177,15 +177,16 @@ void reset_players() {
   players[1].dir = D_LEFT;
   players[0].collided = players[1].collided = 0;
   
-  players[0].length = players[1].length = 1;
+  players[0].length = players[1].length = 2;
   
-  for(i = 0; i < 45 && (players[0].body[i].active || players[1].body[i].active); i++)
+  
+  players[0].body[0].active = players[1].body[0].active = true;
+  for(i = 1; i < 45 && (players[0].body[i].active || players[1].body[i].active); i++)
   {
-    players[0].body[i].active = false;
-    players[1].body[i].active = false;
+    players[0].body[i].active = players[1].body[i].active = false;
   }
   
-  frames_per_move = START_SPEED;
+  frames_per_move = START_SPEED +(2 * num_players * num_players);
 }
 
 void draw_player(Player* p) {
@@ -341,8 +342,8 @@ void flash_colliders() {
   for (i=0; i<56; i++) {
     //cv_set_frequency(CV_SOUNDCHANNEL_0, 1000+i*8);
     //cv_set_attenuation(CV_SOUNDCHANNEL_0, i/2);
-    if (players[0].collided) players[0].head_attr ^= 0x80;
-    if (players[1].collided) players[1].head_attr ^= 0x80;
+    if (players[0].collided && (i % 4) == 0) players[0].head_attr ^= 0x30;
+    if (players[1].collided && (i % 4) == 0) players[1].head_attr ^= 0x30;
     vrambuf_flush();
     vrambuf_flush();
     draw_player(&players[0]);
@@ -402,8 +403,8 @@ const unsigned char Palette_Table[16]={
   0x00,
   0x26,0x28,0x31,0x00,
   0x04,0x24,0x34,0x00,
-  0x09,0x29,0x39,0x00,
-  0x06,0x26,0x36
+  0x06,0x17,0x26,0x00,
+  0x12,0x13,0x31
 };
 
 // put 8x8 grid of palette entries into the PPU
