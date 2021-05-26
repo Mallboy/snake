@@ -79,6 +79,7 @@ typedef struct {
   char tail_attr;
   int collided:1;
   int human:1;
+  int num;
   BodyPart body[45];
   int length;
 } Player;
@@ -93,6 +94,7 @@ Player players[2];
 Powop pow;
 
 byte attract;
+byte num_players;
 byte gameover;
 byte frames_per_move;
 unsigned char seed;
@@ -125,7 +127,8 @@ void draw_playfield() {
   draw_box(1,3,COLS-2,ROWS-1,BOX_CHARS);
   if (attract) {
     //cputsxy(3,ROWS-1,"BATTLE SNAKE - PRESS ENTER");
-    cputsxy(3,2,"BATTLE SNAKE - PRESS ENTER");
+    cputsxy(2,2,"BATTLE SNAKE /// Slither.NES");
+    cputsxy(3,ROWS-1,"Press: A for 1P | B for 2P");
   } else {
     cputcxy(9,2,players[0].score+'0');
     cputcxy(28,2,players[1].score+'0');
@@ -240,17 +243,30 @@ void move_player(Player* p) {
 
 void human_control(Player* p) {
   byte dir = 0xff;
-  byte joy;
-  joy = joy_read (JOY_1);
+  byte pad;
+  if(p->num == 2)
+  {
+    pad = pad_poll(1);
+  }
+  else
+    pad = pad_poll(0);
   // start game if attract mode
-  if (attract && (joy & JOY_START_MASK))
+  if (attract && (pad & PAD_A))
+  {
     gameover = 1;
+    num_players = 1;
+  }
+  else if (attract && (pad & PAD_B))
+  {
+    gameover = 1;
+    num_players = 2;
+  }
   // do not allow movement unless human player
   if (!p->human) return;
-  if (joy & JOY_LEFT_MASK) dir = D_LEFT;
-  if (joy & JOY_RIGHT_MASK) dir = D_RIGHT;
-  if (joy & JOY_UP_MASK) dir = D_UP;
-  if (joy & JOY_DOWN_MASK) dir = D_DOWN;
+  if (pad & PAD_LEFT) dir = D_LEFT;
+  if (pad & PAD_RIGHT) dir = D_RIGHT;
+  if (pad & PAD_UP) dir = D_UP;
+  if (pad & PAD_DOWN) dir = D_DOWN;
   // don't let the player reverse
   if (dir < 0x80 && dir != (p->dir ^ 2)) {
     p->dir = dir;
@@ -339,6 +355,7 @@ void make_move() {
   byte i;
   for (i=0; i<frames_per_move; i++) {
     human_control(&players[0]);
+    human_control(&players[1]);
     vrambuf_flush();
   }
   ai_control(&players[0]);
@@ -437,7 +454,15 @@ void play_game() {
   gameover = 0;
   init_game();
   if (!attract)
+  {
     players[0].human = 1;
+    players[0].num = 1;
+    if (num_players == 2)
+    {
+      players[1].human = 1;
+      players[1].num = 2;
+    }
+  }
   while (!gameover) {
     play_round();
   }
